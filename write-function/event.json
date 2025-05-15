@@ -1,0 +1,4 @@
+{
+  "httpMethod": "POST",
+  "body": "{\"severity\": \"info\", \"message\": \"Test message\"}"
+}
