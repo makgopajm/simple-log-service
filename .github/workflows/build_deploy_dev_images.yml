@@ -65,13 +65,13 @@ jobs:
           docker build -t $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG .
           docker push $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG
 
-       # Install Trivy
-      - name: Install Trivy
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget
-          wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.1_Linux-64bit.deb
-          sudo dpkg -i trivy_0.50.1_Linux-64bit.deb
+      #  # Install Trivy
+      # - name: Install Trivy
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install -y wget
+      #     wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.1_Linux-64bit.deb
+      #     sudo dpkg -i trivy_0.50.1_Linux-64bit.deb
 
       # # Scan Docker images for security vulnerabilities - Writer
       # - name: Scan Lambda Function writer Docker image for vulnerabilities
