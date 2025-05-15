@@ -12,14 +12,13 @@ env:
   OIDC_ROLE: ${{ secrets.GITHUBACTIONSROLE }}
   AWS_ACCOUNT_ID: ${{ secrets.ACCOUNT }}
   ENV_VAR: dev
-  AWS_REGION: us-east=1
-  WR_ECR_REGISTRY: log-service-writer-ecr
-  RD_ECR_REGISTRY: log-service-reader-ecr
+  AWS_REGION: us-east-1
+  WR_ECR_REPOSITORY: log-service-writer-ecr
+  RD_ECR_REPOSITORY: log-service-reader-ecr
   WR_LAMBDA: writer-lambda
   RD_LAMBDA: reader-lambda
 
 jobs:
-
   build_and_deploy:
     runs-on: ubuntu-latest
     environment: AWS
@@ -30,7 +29,7 @@ jobs:
       contents: read
 
     steps:
-
+      # Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v2
 
@@ -39,62 +38,65 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: ${{ env.OIDC_ROLE }}
-          aws-region: us-east-1
+          aws-region: ${{ env.AWS_REGION }}
 
-      # Build and push Docker images to ECR - Writer Image
+      # Login to Amazon ECR
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-    
+
+      # Build and push Docker image to ECR - Writer Lambda
       - name: Tag and Push Docker image for Lambda Function writer
-        id: build-image
-        env: 
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}  
-          WR_ECR_REPOSITORY: ${{ env.WR_IMAGE_REPO }}
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.run_number }}
         run: |
           cd write-function
-          docker image build . -t $ECR_REGISTRY/$WR_ECR_REGISTRY:IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:IMAGE_TAG
+          docker build -t $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG
 
-      # Build and push Docker images to ECR - Reader Image
-      - name: Login to Amazon ECR
-        id: login-ecr-rd
-        uses: aws-actions/amazon-ecr-login@v1
-    
-      - name: Tag and Push Docker image for Lambda Function writer
-        id: build-image-rd
-        env: 
-          ECR_REGISTRY: ${{ steps.login-ecr-rd.outputs.registry }}  
-          RD_ECR_REPOSITORY: ${{ env.RD_IMAGE_REPO }}
+      # Build and push Docker image to ECR - Reader Lambda
+      - name: Tag and Push Docker image for Lambda Function reader
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.run_number }}
         run: |
-          cd read-function
-          docker image build . -t $ECR_REGISTRY/$RD_ECR_REGISTRY:IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:IMAGE_TAG
+          cd ../read-function
+          docker build -t $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG
 
+      # Scan Docker images for security vulnerabilities - Writer
+      - name: Scan Lambda Function writer Docker image for vulnerabilities
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.run_number }}
+        run: |
+          trivy image $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG --exit-code 1 --severity HIGH,CRITICAL
 
-      # # Step 4: Scan Docker images for security vulnerabilities
-      # - name: Scan Lambda Function 1 Docker image for vulnerabilities
-      #   run: |
-      #     trivy image ${{ secrets.ECR_REPO_URI }}/lambda-function-1:latest --exit-code 1 --severity HIGH,CRITICAL
-          
-      # - name: Scan Lambda Function 2 Docker image for vulnerabilities
-      #   run: |
-      #     trivy image ${{ secrets.ECR_REPO_URI }}/lambda-function-2:latest --exit-code 1 --severity HIGH,CRITICAL
+      # Scan Docker images for security vulnerabilities - Reader
+      - name: Scan Lambda Function reader Docker image for vulnerabilities
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.run_number }}
+        run: |
+          trivy image $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG --exit-code 1 --severity HIGH,CRITICAL
 
-
-      # Step 5: Deploy Lambda functions using AWS CLI (Replace with Serverless if desired)
+      # Deploy Writer Lambda using updated Docker image
       - name: Deploy Lambda Function Writer
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.run_number }}
         run: |
           aws lambda update-function-code \
             --function-name ${{ env.WR_LAMBDA }} \
-            --image-uri ${{ env.ECR_REGISTRY }}/WR_ECR_REPOSITORY:${{ env.IMAGE_TAG }}
+            --image-uri $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG
 
+      # Deploy Reader Lambda using updated Docker image
       - name: Deploy Lambda Function Reader
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.run_number }}
         run: |
           aws lambda update-function-code \
             --function-name ${{ env.RD_LAMBDA }} \
-            --image-uri ${{ env.ECR_REGISTRY }}/RD_ECR_REPOSITORY:${{ env.IMAGE_TAG }}
-
-
+            --image-uri $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG
