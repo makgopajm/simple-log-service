@@ -89,22 +89,22 @@ jobs:
       #   run: |
       #     trivy image $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG --exit-code 1 --severity HIGH,CRITICAL
 
-      # Deploy Writer Lambda using updated Docker image
-      - name: Deploy Lambda Function Writer
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.run_number }}
-        run: |
-          aws lambda update-function-code \
-            --function-name ${{ env.WR_LAMBDA }} \
-            --image-uri $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG
+      # # Deploy Writer Lambda using updated Docker image
+      # - name: Deploy Lambda Function Writer
+      #   env:
+      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      #     IMAGE_TAG: ${{ github.run_number }}
+      #   run: |
+      #     aws lambda update-function-code \
+      #       --function-name ${{ env.WR_LAMBDA }} \
+      #       --image-uri $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG
 
-      # Deploy Reader Lambda using updated Docker image
-      - name: Deploy Lambda Function Reader
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.run_number }}
-        run: |
-          aws lambda update-function-code \
-            --function-name ${{ env.RD_LAMBDA }} \
-            --image-uri $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG
+      # # Deploy Reader Lambda using updated Docker image
+      # - name: Deploy Lambda Function Reader
+      #   env:
+      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      #     IMAGE_TAG: ${{ github.run_number }}
+      #   run: |
+      #     aws lambda update-function-code \
+      #       --function-name ${{ env.RD_LAMBDA }} \
+      #       --image-uri $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG
