@@ -88,13 +88,13 @@ jobs:
       - name: Deploy Lambda Function Writer
         run: |
           aws lambda update-function-code \
-            --function-name ${{ env.writer-lambda }} \
+            --function-name ${{ env.WR_LAMBDA }} \
             --image-uri ${{ env.ECR_REGISTRY }}/WR_ECR_REPOSITORY:${{ env.IMAGE_TAG }}
 
       - name: Deploy Lambda Function Reader
         run: |
           aws lambda update-function-code \
-            --function-name ${{ reader-lambda }} \
+            --function-name ${{ env.RD_LAMBDA }} \
             --image-uri ${{ env.ECR_REGISTRY }}/RD_ECR_REPOSITORY:${{ env.IMAGE_TAG }}
 
 
