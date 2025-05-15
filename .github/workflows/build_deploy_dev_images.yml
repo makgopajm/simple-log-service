@@ -47,7 +47,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
     
       - name: Tag and Push Docker image for Lambda Function writer
-        id: build-image-wr
+        id: build-image
         env: 
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}  
           WR_ECR_REPOSITORY: ${{ env.WR_IMAGE_REPO }}
@@ -59,13 +59,13 @@ jobs:
 
       # Build and push Docker images to ECR - Reader Image
       - name: Login to Amazon ECR
-        id: login-ecr
+        id: login-ecr-rd
         uses: aws-actions/amazon-ecr-login@v1
     
       - name: Tag and Push Docker image for Lambda Function writer
-        id: build-image-wr
+        id: build-image-rd
         env: 
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}  
+          ECR_REGISTRY: ${{ steps.login-ecr-rd.outputs.registry }}  
           RD_ECR_REPOSITORY: ${{ env.RD_IMAGE_REPO }}
           IMAGE_TAG: ${{ github.run_number }}
         run: |
