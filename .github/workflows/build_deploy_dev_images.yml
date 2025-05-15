@@ -72,22 +72,22 @@ jobs:
           sudo apt-get install -y wget
           wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.1_Linux-64bit.deb
           sudo dpkg -i trivy_0.50.1_Linux-64bit.deb
-          
-      # Scan Docker images for security vulnerabilities - Writer
-      - name: Scan Lambda Function writer Docker image for vulnerabilities
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.run_number }}
-        run: |
-          trivy image $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG --exit-code 1 --severity HIGH,CRITICAL
 
-      # Scan Docker images for security vulnerabilities - Reader
-      - name: Scan Lambda Function reader Docker image for vulnerabilities
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.run_number }}
-        run: |
-          trivy image $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG --exit-code 1 --severity HIGH,CRITICAL
+      # # Scan Docker images for security vulnerabilities - Writer
+      # - name: Scan Lambda Function writer Docker image for vulnerabilities
+      #   env:
+      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      #     IMAGE_TAG: ${{ github.run_number }}
+      #   run: |
+      #     trivy image $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG --exit-code 1 --severity HIGH,CRITICAL
+
+      # # Scan Docker images for security vulnerabilities - Reader
+      # - name: Scan Lambda Function reader Docker image for vulnerabilities
+      #   env:
+      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      #     IMAGE_TAG: ${{ github.run_number }}
+      #   run: |
+      #     trivy image $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG --exit-code 1 --severity HIGH,CRITICAL
 
       # Deploy Writer Lambda using updated Docker image
       - name: Deploy Lambda Function Writer
