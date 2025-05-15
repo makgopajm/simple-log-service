@@ -54,7 +54,7 @@ jobs:
           IMAGE_TAG: ${{ github.run_number }}
         run: |
           cd write-function
-          docker image build . -t $ECR_REGISTRY/$ECR_REPOSITORY:IMAGE_TAG
+          docker image build . -t $ECR_REGISTRY/$WR_ECR_REGISTRY:IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:IMAGE_TAG
 
       # Build and push Docker images to ECR - Reader Image
@@ -70,7 +70,7 @@ jobs:
           IMAGE_TAG: ${{ github.run_number }}
         run: |
           cd read-function
-          docker image build . -t $ECR_REGISTRY/$ECR_REPOSITORY:IMAGE_TAG
+          docker image build . -t $ECR_REGISTRY/$RD_ECR_REGISTRY:IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:IMAGE_TAG
 
 
