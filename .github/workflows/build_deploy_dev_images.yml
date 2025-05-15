@@ -31,7 +31,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+<<<<<<< HEAD
 
+=======
+        
+        # OIDC - To get temporary credentials from AWS
+>>>>>>> 949ee7117de3aa8764ddc15e45d846889480164d
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
