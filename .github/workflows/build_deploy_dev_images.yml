@@ -29,18 +29,15 @@ jobs:
       contents: read
 
     steps:
-      # Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # OIDC - To get temporary credentials from AWS
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: ${{ env.OIDC_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # Login to Amazon ECR
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
@@ -53,7 +50,9 @@ jobs:
         run: |
           cd write-function
           docker build -t $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:latest
           docker push $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG
+          docker push $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:latest
 
       # Build and push Docker image to ECR - Reader Lambda
       - name: Tag and Push Docker image for Lambda Function reader
@@ -63,48 +62,24 @@ jobs:
         run: |
           cd read-function
           docker build -t $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:latest
           docker push $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG
+          docker push $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:latest
 
-      #  # Install Trivy
-      # - name: Install Trivy
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install -y wget
-      #     wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.50.1_Linux-64bit.deb
-      #     sudo dpkg -i trivy_0.50.1_Linux-64bit.deb
-
-      # # Scan Docker images for security vulnerabilities - Writer
-      # - name: Scan Lambda Function writer Docker image for vulnerabilities
-      #   env:
-      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-      #     IMAGE_TAG: ${{ github.run_number }}
-      #   run: |
-      #     trivy image $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG --exit-code 1 --severity HIGH,CRITICAL
-
-      # # Scan Docker images for security vulnerabilities - Reader
-      # - name: Scan Lambda Function reader Docker image for vulnerabilities
-      #   env:
-      #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-      #     IMAGE_TAG: ${{ github.run_number }}
-      #   run: |
-      #     trivy image $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG --exit-code 1 --severity HIGH,CRITICAL
-
-      # # Deploy Writer Lambda using updated Docker image
+      # Optional: Deploy Writer Lambda with new image
       # - name: Deploy Lambda Function Writer
       #   env:
       #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-      #     IMAGE_TAG: ${{ github.run_number }}
       #   run: |
       #     aws lambda update-function-code \
       #       --function-name ${{ env.WR_LAMBDA }} \
-      #       --image-uri $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG
+      #       --image-uri $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:latest
 
-      # # Deploy Reader Lambda using updated Docker image
+      # Optional: Deploy Reader Lambda with new image
       # - name: Deploy Lambda Function Reader
       #   env:
       #     ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-      #     IMAGE_TAG: ${{ github.run_number }}
       #   run: |
       #     aws lambda update-function-code \
       #       --function-name ${{ env.RD_LAMBDA }} \
-      #       --image-uri $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG
+      #       --image-uri $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:latest
