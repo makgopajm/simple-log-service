@@ -1,0 +1,56 @@
+# Building and Deploy the image  simple log service.
+
+# Name of the workflow
+name: Deploy Frontend to S3
+
+# Runs the workflow when pull request to the branch (develop) is closed.
+on:
+  pull_request:
+    branches:
+      - develop
+    types:
+      - closed
+
+# Sets environment variables. Some variables are stored as secrets to protect senstive information.
+env:
+  AWS_REGION: us-east-1
+  OIDC_ROLE: ${{ secrets.GITHUBACTIONSROLE }}
+  AWS_ACCOUNT_ID: ${{ secrets.ACCOUNT }}
+
+
+# This job runs when a pull request is merged into the branch and has a label.
+# JavaScript, HTML and CSS scripts will be upload to the s3 bucket.
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: AWS
+    if: github.event.pull_request.merged == true && contains(join(github.event.pull_request.labels.*.name, ','), 'frontend_deploy') # Prevents unnecessary runs on every PR merge.
+
+    # Enables OIDC authentication to assume AWS role without long-lived credentials.
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+
+        # Pulls repo code into the runner.
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+        # Assumes the OIDC IAM role.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ env.OIDC_ROLE }}
+          aws-region: ${{ env.AWS_REGION }}
+
+        # Update env in app.js
+      - name: Inject API URLs into app.js
+        run: |
+          sed -i "s|__WRITE_LOG_URL__|${WRITE_LOG_URL}|" static/app.js
+          sed -i "s|__GET_LOGS_URL__|${GET_LOGS_URL}|" static/app.js
+
+        # Uploads the file to S3
+      - name: Upload files to S3
+        run: |
+          aws s3 sync static/ s3://${S3_BUCKET_NAME}/ --delete

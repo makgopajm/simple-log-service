@@ -1,5 +1,6 @@
-const WRITE_LOG_URL = 'https://hent4zgw0j.execute-api.us-east-1.amazonaws.com/dev/write-logs';
-const GET_LOGS_URL = 'https://hent4zgw0j.execute-api.us-east-1.amazonaws.com/dev/read-logs';
+/** Environment Variables */
+const WRITE_LOG_URL = '__WRITE_LOG_URL__';
+const GET_LOGS_URL = '__GET_LOGS_URL__';
 
 async function sendLog() {
   const severity = document.getElementById('severity').value;
