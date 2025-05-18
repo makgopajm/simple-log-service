@@ -47,8 +47,10 @@ jobs:
         # Update env in app.js
       - name: Inject API URLs into app.js
         run: |
-          sed -i "s|__WRITE_LOG_URL__|${WRITE_LOG_URL}|" static/app.js
-          sed -i "s|__GET_LOGS_URL__|${GET_LOGS_URL}|" static/app.js
+          echo "Replacing URLs in app.js"
+          sed -i "s|__WRITER_API_URL__|${{ github.event.client_payload.writer_url }}|g" static/app.js
+          sed -i "s|__READER_API_URL__|${{ github.event.client_payload.reader_url }}|g" static/app.js
+
 
         # Uploads the file to S3
       - name: Upload files to S3
@@ -81,8 +83,9 @@ jobs:
             # Update env in app.js
           - name: Inject API URLs into app.js
             run: |
-              sed -i "s|__WRITE_LOG_URL__|${WRITE_LOG_URL}|" static/app.js
-              sed -i "s|__GET_LOGS_URL__|${GET_LOGS_URL}|" static/app.js
+              echo "Replacing URLs in app.js"
+              sed -i "s|__WRITER_API_URL__|${{ github.event.client_payload.writer_url }}|g" static/app.js
+              sed -i "s|__READER_API_URL__|${{ github.event.client_payload.reader_url }}|g" static/app.js
     
             # Uploads the file to S3
           - name: Upload files to S3
