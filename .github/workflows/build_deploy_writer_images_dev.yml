@@ -7,7 +7,7 @@ name: Build & Deploy Writer Image
 on:
   pull_request:
     branches:
-      - develop
+      - main
     types:
       - closed
   repository_dispatch:
