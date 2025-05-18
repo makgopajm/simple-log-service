@@ -10,6 +10,8 @@ on:
       - develop
     types:
       - closed
+  repository_dispatch:
+    types: [deploy-frontend]
 
 # Sets environment variables. Some variables are stored as secrets to protect senstive information.
 env:
