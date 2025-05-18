@@ -1,9 +1,11 @@
-# Building and Deploy the image  simple log service.
+# Building and Deploying the Simple Log Service frontend
 
 # Name of the workflow
 name: Deploy Frontend to S3
 
-# Runs the workflow when pull request to the branch (develop) is closed.
+# Trigger when:
+# 1. A pull request to the 'develop' branch is closed and labeled appropriately.
+# 2. A repository_dispatch event is triggered by the infra repo with dynamic values.
 on:
   pull_request:
     branches:
@@ -13,83 +15,60 @@ on:
   repository_dispatch:
     types: [deploy-frontend]
 
-# Sets environment variables. Some variables are stored as secrets to protect senstive information.
+# Global environment variables from GitHub Secrets
 env:
   AWS_REGION: us-east-1
   OIDC_ROLE: ${{ secrets.GITHUBACTIONSROLE }}
   AWS_ACCOUNT_ID: ${{ secrets.ACCOUNT }}
 
-
-# This job runs when a pull request is merged into the branch and has a label.
-# JavaScript, HTML and CSS scripts will be upload to the s3 bucket.
 jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: AWS
-    if: github.event.pull_request.merged == true && contains(join(github.event.pull_request.labels.*.name, ','), 'frontend_deploy') # Prevents unnecessary runs on every PR merge.
 
-    # Enables OIDC authentication to assume AWS role without long-lived credentials.
+    # This job runs if either:
+    # - it's a repo_dispatch event (from infra pipeline), OR
+    # - a PR to develop is merged and labeled 'frontend_deploy'
+    if: github.event_name == 'repository_dispatch' || 
+        (github.event.pull_request.merged == true && contains(join(github.event.pull_request.labels.*.name, ','), 'frontend_deploy'))
+
     permissions:
       id-token: write
       contents: read
 
     steps:
-
-        # Pulls repo code into the runner.
+      # Checkout the code
       - name: Checkout code
         uses: actions/checkout@v3
 
-        # Assumes the OIDC IAM role.
+      # Configure AWS credentials via OIDC
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: ${{ env.OIDC_ROLE }}
           aws-region: ${{ env.AWS_REGION }}
 
-        # Update env in app.js
+      # Inject API URLs and set bucket name from repository_dispatch payload
       - name: Inject API URLs into app.js
-        run: |
-          echo "Replacing URLs in app.js"
-          sed -i "s|__WRITER_API_URL__|${{ github.event.client_payload.writer_url }}|g" static/app.js
-          sed -i "s|__READER_API_URL__|${{ github.event.client_payload.reader_url }}|g" static/app.js
-
-
-        # Uploads the file to S3
-      - name: Upload files to S3
-        run: |
-          aws s3 sync static/ s3://${S3_BUCKET_NAME}/ --delete
-
-  deploy_dispatch:
-        runs-on: ubuntu-latest
-        environment: AWS
         if: github.event_name == 'repository_dispatch'
-        
-        # Enables OIDC authentication to assume AWS role without long-lived credentials.
-        permissions:
-          id-token: write
-          contents: read
-    
-        steps:
-    
-            # Pulls repo code into the runner.
-          - name: Checkout code
-            uses: actions/checkout@v3
-    
-            # Assumes the OIDC IAM role.
-          - name: Configure AWS credentials
-            uses: aws-actions/configure-aws-credentials@v3
-            with:
-              role-to-assume: ${{ env.OIDC_ROLE }}
-              aws-region: ${{ env.AWS_REGION }}
-    
-            # Update env in app.js
-          - name: Inject API URLs into app.js
-            run: |
-              echo "Replacing URLs in app.js"
-              sed -i "s|__WRITER_API_URL__|${{ github.event.client_payload.writer_url }}|g" static/app.js
-              sed -i "s|__READER_API_URL__|${{ github.event.client_payload.reader_url }}|g" static/app.js
-    
-            # Uploads the file to S3
-          - name: Upload files to S3
-            run: |
-              aws s3 sync static/ s3://${S3_BUCKET_NAME}/ --delete
+        env:
+          WRITE_LOG_URL: ${{ github.event.client_payload.writer_url }}
+          GET_LOGS_URL: ${{ github.event.client_payload.reader_url }}
+        run: |
+          echo "Injecting API Gateway URLs into app.js..."
+          sed -i "s|__WRITE_LOG_URL__|${WRITE_LOG_URL}|" static/app.js
+          sed -i "s|__GET_LOGS_URL__|${GET_LOGS_URL}|" static/app.js
+
+      # Get S3 bucket name from repository_dispatch payload
+      - name: Set S3 Bucket Name
+        if: github.event_name == 'repository_dispatch'
+        run: echo "S3_BUCKET_NAME=${{ github.event.client_payload.s3_bucket_name }}" >> $GITHUB_ENV
+
+      # Debug step to confirm the S3 bucket name
+      - name: Debug S3 Bucket Name
+        run: echo "S3_BUCKET_NAME is:" ${{ env.S3_BUCKET_NAME }}
+
+      # Sync frontend files to the S3 bucket
+      - name: Upload frontend files to S3
+        run: |
+          aws s3 sync static/ s3://${{ env.S3_BUCKET_NAME }}/ --delete
