@@ -25,7 +25,7 @@ env:
 # This job runs when a pull request is merged into the branch and has a label.
 # Docker image will be built and pushed into ECR and update the image on the writer lambda.
 jobs:
-  build_and_deploy:
+  build_and_deploy_pr:
     runs-on: ubuntu-latest
     environment: AWS
     if: github.event.pull_request.merged == true && contains(join(github.event.pull_request.labels.*.name, ','), 'writer_deploy') # Prevents unnecessary runs on every PR merge.
@@ -72,12 +72,60 @@ jobs:
           token: ${{ secrets.TOKEN }}
           repository: makgopajm/simple-log-service-infra
           event-type: build-lambda-images-rd
-
-     # # Update the Lambda function to use the newly pushed docker image.
-     #  - name: Deploy Lambda Function Writer
-     #    env:
-     #      ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-     #    run: |
-     #      aws lambda update-function-code \
+          
+  build_and_deploy_dispatch:
+        runs-on: ubuntu-latest
+        environment: AWS
+        if: github.event_name == 'repository_dispatch'
+    
+        # Enables OIDC authentication to assume AWS role without long-lived credentials.
+        permissions:
+          id-token: write
+          contents: read
+    
+        steps:
+    
+            # Pulls repo code into the runner.
+          - name: Checkout code
+            uses: actions/checkout@v2
+            
+            # Assumes the OIDC IAM role.
+          - name: Configure AWS credentials
+            uses: aws-actions/configure-aws-credentials@v3
+            with:
+              role-to-assume: ${{ env.OIDC_ROLE }}
+              aws-region: ${{ env.AWS_REGION }}
+              role-session-name: github-actions
+    
+            # Logs into ECR, so Docker can push images.
+          - name: Login to Amazon ECR
+            id: login-ecr
+            uses: aws-actions/amazon-ecr-login@v1
+    
+          # Build and push Docker image to ECR - Writer Lambda
+          - name: Tag and Push Docker image for Lambda Function writer
+            env:
+              ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+              IMAGE_TAG: ${{ github.run_number }}
+            run: |
+              cd write-function
+              docker build -t $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG .
+              docker tag $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:latest
+              docker push $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG
+              docker push $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:latest
+    
+          - name: Trigger Infra Deploy
+            uses: peter-evans/repository-dispatch@v2
+            with:
+              token: ${{ secrets.TOKEN }}
+              repository: makgopajm/simple-log-service-infra
+              event-type: build-lambda-images-rd
+    
+         # # Update the Lambda function to use the newly pushed docker image.
+         #  - name: Deploy Lambda Function Writer
+         #    env:
+         #      ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+         #    run: |
+         #      aws lambda update-function-code \
      #        --function-name ${{ env.WR_LAMBDA }} \
      #        --image-uri $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:latest
