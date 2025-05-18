@@ -66,12 +66,6 @@ jobs:
           docker push $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG
           docker push $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:latest
 
-      - name: Trigger Infra Deploy
-        uses: peter-evans/repository-dispatch@v2
-        with:
-          token: ${{ secrets.TOKEN }}
-          repository: makgopajm/simple-log-service-infra
-          event-type: build-lambda-images-rd
           
   build_and_deploy_dispatch:
         runs-on: ubuntu-latest
@@ -118,7 +112,7 @@ jobs:
             uses: peter-evans/repository-dispatch@v2
             with:
               token: ${{ secrets.TOKEN }}
-              repository: makgopajm/simple-log-service-infra
+              repository: makgopajm/simple-log-service
               event-type: build-lambda-images-rd
     
          # # Update the Lambda function to use the newly pushed docker image.
