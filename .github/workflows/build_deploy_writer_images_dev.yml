@@ -20,7 +20,7 @@ env:
   AWS_ACCOUNT_ID: ${{ secrets.ACCOUNT }}
   AWS_REGION: us-east-1
   WR_ECR_REPOSITORY: log-service-writer-ecr 
-  WR_LAMBDA: writer-lambda
+  #WR_LAMBDA: writer-lambda
 
 # This job runs when a pull request is merged into the branch and has a label.
 # Docker image will be built and pushed into ECR and update the image on the writer lambda.
@@ -54,14 +54,30 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      # Build and push Docker image to ECR - Writer Lambda
-      - name: Tag and Push Docker image for Lambda Function writer
+      # Build Docker image 
+      - name: Build Docker image for Lambda Function writer
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.run_number }}
         run: |
           cd write-function
           docker build -t $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG .
+
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ env.WR_ECR_REPOSITORY }}:${{ github.run_number }}
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
+      
+        # Build and push Docker image to ECR - Writer Lambda
+      - name: Tag and Push Docker image for Lambda Function writer to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.run_number }}
+        run: |
+          cd write-function
           docker tag $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:latest
           docker push $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG
           docker push $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:latest
@@ -97,13 +113,30 @@ jobs:
             uses: aws-actions/amazon-ecr-login@v1
     
           # Build and push Docker image to ECR - Writer Lambda
-          - name: Tag and Push Docker image for Lambda Function writer
+          - name: Build Docker image for Lambda Function writer
             env:
               ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
               IMAGE_TAG: ${{ github.run_number }}
             run: |
               cd write-function
               docker build -t $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG .
+
+            
+          - name: Scan Docker image with Trivy
+            uses: aquasecurity/trivy-action@master
+            with:
+              image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ env.WR_ECR_REPOSITORY }}:${{ github.run_number }}
+              format: table
+              exit-code: 1
+              ignore-unfixed: true
+
+            
+            # Build and push Docker image to ECR - Writer Lambda
+          - name: Push Docker image for Lambda Function writer to ECR
+            env:
+              ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+              IMAGE_TAG: ${{ github.run_number }}
+            run: |
               docker tag $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:latest
               docker push $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG
               docker push $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:latest
@@ -115,11 +148,9 @@ jobs:
               repository: makgopajm/simple-log-service
               event-type: build-lambda-images-rd
     
-         # # Update the Lambda function to use the newly pushed docker image.
-         #  - name: Deploy Lambda Function Writer
-         #    env:
-         #      ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-         #    run: |
-         #      aws lambda update-function-code \
-     #        --function-name ${{ env.WR_LAMBDA }} \
-     #        --image-uri $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:latest
+        #  # Update the Lambda function to use the newly pushed docker image.
+        #   - name: Deploy Lambda Function Writer
+        #     env:
+        #       ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        #     run: |
+        #       aws lambda update-function-code --function-name ${{ env.WR_LAMBDA }} --image-uri $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:latest
