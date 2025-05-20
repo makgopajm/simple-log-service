@@ -53,14 +53,31 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      # Build and push Docker image to ECR - Reader Lambda
-      - name: Tag and Push Docker image for Lambda Function reader
+      # Build Docker image to ECR - Reader Lambda
+      - name: Build Docker image for Lambda Function reader
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.run_number }}
         run: |
           cd read-function
           docker build -t $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG .
+
+      # Scan Docker image with Trivy
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ env.RD_ECR_REPOSITORY }}:${{ github.run_number }}
+          format: table
+          exit-code: 0
+          ignore-unfixed: true
+
+      
+      # Build and push Docker image to ECR - Reader Lambda
+      - name: Push Docker image for Lambda Function reader to ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.run_number }}
+        run: |
           docker tag $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:latest
           docker push $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG
           docker push $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:latest
@@ -75,7 +92,7 @@ jobs:
       #       --function-name ${{ env.RD_LAMBDA }} \
       #       --image-uri $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:latest
 
-  build_and_deploy:
+  build_and_deploy_dispatch:
         runs-on: ubuntu-latest
         environment: AWS
         if: github.event_name == 'repository_dispatch'
@@ -104,18 +121,35 @@ jobs:
             id: login-ecr
             uses: aws-actions/amazon-ecr-login@v1
     
-          # Build and push Docker image to ECR - Reader Lambda
-          - name: Tag and Push Docker image for Lambda Function reader
+          # Build Docker image to ECR - Reader Lambda
+          - name: Build Docker image for Lambda Function reader
             env:
               ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
               IMAGE_TAG: ${{ github.run_number }}
             run: |
               cd read-function
               docker build -t $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG .
+
+          # Scan Docker image with Trivy
+          - name: Scan Docker image with Trivy
+            uses: aquasecurity/trivy-action@master
+            with:
+              image-ref: ${{ steps.login-ecr.outputs.registry }}/${{ env.RD_ECR_REPOSITORY }}:${{ github.run_number }}
+              format: table
+              exit-code: 0
+              ignore-unfixed: true
+
+          
+          # Build and push Docker image to ECR - Reader Lambda
+          - name: Push Docker image for Lambda Function reader to ECR
+            env:
+              ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+              IMAGE_TAG: ${{ github.run_number }}
+            run: |
               docker tag $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:latest
               docker push $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:$IMAGE_TAG
               docker push $ECR_REGISTRY/${{ env.RD_ECR_REPOSITORY }}:latest
-    
+
           - name: Trigger Infra Deploy
             uses: peter-evans/repository-dispatch@v2
             with:
