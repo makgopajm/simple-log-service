@@ -1,31 +1,51 @@
-/** Environment Variables */
-const WRITE_LOG_URL = '__WRITE_LOG_URL__';
-const GET_LOGS_URL = '__GET_LOGS_URL__';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Simple Log Service with Cognito Auth</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- AWS Amplify -->
+  <script src="https://unpkg.com/aws-amplify@4.3.17/dist/aws-amplify.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>📝 Simple Log Service</h1>
 
-async function sendLog() {
-  const severity = document.getElementById('severity').value;
-  const message = document.getElementById('message').value;
+    <section class="card" id="authSection">
+      <h2>User Authentication</h2>
+      <label for="username">Username (email):</label>
+      <input type="text" id="username" placeholder="Enter username" />
+      
+      <label for="password">Password:</label>
+      <input type="password" id="password" placeholder="Enter password" />
+      
+      <button id="loginBtn">Login</button>
+      <button id="logoutBtn" style="display:none;">Logout</button>
+      <p id="authMessage"></p>
+    </section>
 
-  const response = await fetch(WRITE_LOG_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ severity, message })
-  });
+    <section class="card" id="logSection" style="display:none;">
+      <h2>Write a Log Entry</h2>
+      <label for="severity">Severity:</label>
+      <select id="severity">
+        <option value="info">Info</option>
+        <option value="warning">Warning</option>
+        <option value="error">Error</option>
+      </select>
 
-  const result = await response.json();
-  alert(result.message || result.error || 'Submitted');
-}
+      <label for="message">Message:</label>
+      <input type="text" id="message" placeholder="Enter your log message" />
 
-async function loadLogs() {
-  const res = await fetch(GET_LOGS_URL);
-  const logs = await res.json();
+      <button onclick="sendLog()">Submit Log</button>
+    </section>
 
-  const list = document.getElementById('logList');
-  list.innerHTML = '';
+    <section class="card" id="logsDisplay" style="display:none;">
+      <h2>Recent Logs</h2>
+      <button class="refresh-btn" onclick="loadLogs()">🔄 Refresh Logs</button>
+      <ul id="logList"></ul>
+    </section>
+  </div>
 
-  logs.forEach(log => {
-    const item = document.createElement('li');
-    item.textContent = `[${log.datetime}] ${log.severity.toUpperCase()}: ${log.message}`;
-    list.appendChild(item);
-  });
-}
+  <script src="app.js"></script>
+</body>
+</html>
