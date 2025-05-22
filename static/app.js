@@ -1,5 +1,5 @@
 // ==== CONFIGURE AMPLIFY ====
-Amplify.configure({
+const amplifyConfig = {
   Auth: {
     region: '__COGNITO_REGION__',
     userPoolId: '__USER_POOL_ID__',
@@ -12,10 +12,14 @@ Amplify.configure({
       responseType: 'code'
     }
   }
-});
+};
 
+window.Amplify.configure(amplifyConfig);
 
-// ==== API URLs (Inject these at deploy time) ====
+// Optional alias
+const Auth = window.Amplify.Auth;
+
+// ==== API URLs (Injected at deploy time) ====
 const WRITE_LOG_URL = '__WRITE_LOG_URL__';
 const GET_LOGS_URL = '__GET_LOGS_URL__';
 
@@ -31,10 +35,8 @@ checkUser();
 
 async function checkUser() {
   try {
-    const user = await Amplify.Auth.currentAuthenticatedUser();
-    const session = await Amplify.Auth.currentSession();
-    const idToken = session.getIdToken().getJwtToken();
-    const accessToken = session.getAccessToken().getJwtToken();
+    const user = await Auth.currentAuthenticatedUser();
+    const session = await Auth.currentSession();
     const email = user.attributes.email || user.username;
 
     userInfo.textContent = `✅ Logged in as: ${email}`;
@@ -54,19 +56,19 @@ async function checkUser() {
 
 // ==== Login using Hosted UI ====
 loginBtn.onclick = () => {
-  Amplify.Auth.federatedSignIn();
+  Auth.federatedSignIn();
 };
 
 // ==== Logout ====
 logoutBtn.onclick = async () => {
-  await Amplify.Auth.signOut({ global: true });
+  await Auth.signOut({ global: true });
   window.location.href = '/'; // Reload home page after logout
 };
 
 // ==== Get Access Token ====
 async function getJwtToken() {
   try {
-    const session = await Amplify.Auth.currentSession();
+    const session = await Auth.currentSession();
     return session.getAccessToken().getJwtToken(); // API Gateway expects access token
   } catch {
     return null;
