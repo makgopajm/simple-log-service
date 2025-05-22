@@ -15,8 +15,6 @@ const amplifyConfig = {
 };
 
 window.Amplify.configure(amplifyConfig);
-
-// Optional alias
 const Auth = window.Amplify.Auth;
 
 // ==== API URLs (Injected at deploy time) ====
@@ -29,6 +27,9 @@ const logoutBtn = document.getElementById('logoutBtn');
 const userInfo = document.getElementById('userInfo');
 const logSection = document.querySelector('.card:nth-of-type(2)');
 const logsSection = document.querySelector('.card:nth-of-type(3)');
+const severityInput = document.getElementById('severity');
+const messageInput = document.getElementById('message');
+const logList = document.getElementById('logList');
 
 // ==== On Load, Check Auth Status ====
 checkUser();
@@ -45,7 +46,7 @@ async function checkUser() {
     logSection.style.display = 'block';
     logsSection.style.display = 'block';
     loadLogs();
-  } catch (err) {
+  } catch {
     userInfo.textContent = '🔐 Not logged in.';
     loginBtn.style.display = 'inline-block';
     logoutBtn.style.display = 'none';
@@ -62,14 +63,14 @@ loginBtn.onclick = () => {
 // ==== Logout ====
 logoutBtn.onclick = async () => {
   await Auth.signOut({ global: true });
-  window.location.href = '/'; // Reload home page after logout
+  window.location.href = '/';
 };
 
 // ==== Get Access Token ====
 async function getJwtToken() {
   try {
     const session = await Auth.currentSession();
-    return session.getAccessToken().getJwtToken(); // API Gateway expects access token
+    return session.getAccessToken().getJwtToken();
   } catch {
     return null;
   }
@@ -83,26 +84,44 @@ async function sendLog() {
     return;
   }
 
-  const severity = document.getElementById('severity').value;
-  const message = document.getElementById('message').value;
+  const severity = severityInput.value;
+  const message = messageInput.value.trim();
 
-  if (!message.trim()) {
+  if (!message) {
     alert('Please enter a log message');
     return;
   }
 
-  const response = await fetch(WRITE_LOG_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token
-    },
-    body: JSON.stringify({ severity, message })
-  });
+  // Optional: Basic severity validation
+  const allowedSeverities = ['info', 'warning', 'error'];
+  if (!allowedSeverities.includes(severity)) {
+    alert(`Severity must be one of: ${allowedSeverities.join(', ')}`);
+    return;
+  }
 
-  const result = await response.json();
-  alert(result.message || result.error || 'Log submitted');
-  loadLogs();
+  try {
+    const response = await fetch(WRITE_LOG_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ severity, message })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to submit log');
+    }
+
+    alert(result.message || 'Log submitted');
+    messageInput.value = '';
+    loadLogs();
+  } catch (err) {
+    console.error('Submit error:', err);
+    alert(err.message || 'An error occurred while submitting the log.');
+  }
 }
 
 // ==== Load Logs ====
@@ -113,20 +132,28 @@ async function loadLogs() {
     return;
   }
 
-  const res = await fetch(GET_LOGS_URL, {
-    headers: {
-      'Authorization': token
+  try {
+    const res = await fetch(GET_LOGS_URL, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const logs = await res.json();
+
+    if (!res.ok || !Array.isArray(logs)) {
+      throw new Error('Failed to load logs');
     }
-  });
 
-  const logs = await res.json();
-
-  const list = document.getElementById('logList');
-  list.innerHTML = '';
-
-  logs.forEach(log => {
-    const item = document.createElement('li');
-    item.textContent = `[${log.datetime}] ${log.severity.toUpperCase()}: ${log.message}`;
-    list.appendChild(item);
-  });
+    logList.innerHTML = '';
+    logs.forEach(log => {
+      const item = document.createElement('li');
+      item.textContent = `[${log.datetime}] ${log.severity.toUpperCase()}: ${log.message}`;
+      logList.appendChild(item);
+    });
+  } catch (err) {
+    console.error('Load error:', err);
+    alert(err.message || 'An error occurred while loading logs.');
+  }
 }
