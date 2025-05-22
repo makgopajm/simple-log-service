@@ -1,5 +1,5 @@
 // Required when using the CDN version of Amplify v4
-const Amplify = window.aws_amplify.Amplify || window.Amplify;
+const Amplify = window.aws_amplify?.Amplify || window.Amplify;
 
 // ==== CONFIGURE AMPLIFY ====
 const amplifyConfig = {
@@ -41,38 +41,45 @@ async function checkUser() {
     const session = await Auth.currentSession();
     const email = user.attributes.email || user.username;
 
-    userInfo.textContent = `✅ Logged in as: ${email}`;
-    loginBtn.style.display = 'none';
-    logoutBtn.style.display = 'inline-block';
-    logSection.style.display = 'block';
-    logsSection.style.display = 'block';
+    if (userInfo) userInfo.textContent = `✅ Logged in as: ${email}`;
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'inline-block';
+    if (logSection) logSection.style.display = 'block';
+    if (logsSection) logsSection.style.display = 'block';
+
     loadLogs();
   } catch (err) {
-    userInfo.textContent = '🔐 Not logged in.';
-    loginBtn.style.display = 'inline-block';
-    logoutBtn.style.display = 'none';
-    logSection.style.display = 'none';
-    logsSection.style.display = 'none';
+    console.warn('Auth check failed:', err);
+    if (userInfo) userInfo.textContent = '🔐 Not logged in.';
+    if (loginBtn) loginBtn.style.display = 'inline-block';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+    if (logSection) logSection.style.display = 'none';
+    if (logsSection) logsSection.style.display = 'none';
   }
 }
 
 // ==== Login using Hosted UI ====
-loginBtn.onclick = () => {
-  Auth.federatedSignIn();
-};
+if (loginBtn) {
+  loginBtn.onclick = () => {
+    Auth.federatedSignIn();
+  };
+}
 
 // ==== Logout ====
-logoutBtn.onclick = async () => {
-  await Auth.signOut({ global: true });
-  window.location.href = '/'; // Reload home page after logout
-};
+if (logoutBtn) {
+  logoutBtn.onclick = async () => {
+    await Auth.signOut({ global: true });
+    window.location.href = '/'; // Reload home page after logout
+  };
+}
 
 // ==== Get Access Token ====
 async function getJwtToken() {
   try {
     const session = await Auth.currentSession();
     return session.getAccessToken().getJwtToken(); // API Gateway expects access token
-  } catch {
+  } catch (err) {
+    console.error('Error fetching token:', err);
     return null;
   }
 }
@@ -85,10 +92,10 @@ async function sendLog() {
     return;
   }
 
-  const severity = document.getElementById('severity').value;
-  const message = document.getElementById('message').value;
+  const severity = document.getElementById('severity')?.value;
+  const message = document.getElementById('message')?.value;
 
-  if (!message.trim()) {
+  if (!message?.trim()) {
     alert('Please enter a log message');
     return;
   }
@@ -124,6 +131,8 @@ async function loadLogs() {
   const logs = await res.json();
 
   const list = document.getElementById('logList');
+  if (!list) return;
+
   list.innerHTML = '';
 
   logs.forEach(log => {
