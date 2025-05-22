@@ -18,8 +18,9 @@ const amplifyConfig = {
   }
 };
 
-Amplify.configure(amplifyConfig);
-const Auth = Amplify.Auth;
+
+window.Amplify.configure(amplifyConfig);
+const Auth = window.Amplify.Auth;
 
 // ==== API URLs (Injected at deploy time) ====
 const WRITE_LOG_URL = '__WRITE_LOG_URL__';
@@ -29,10 +30,12 @@ const GET_LOGS_URL = '__GET_LOGS_URL__';
 const loginBtn = document.getElementById('loginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const userInfo = document.getElementById('userInfo');
-
-// ✅ Use IDs for clarity and stability
-const logSection = document.getElementById('logSection');
-const logsSection = document.getElementById('logsSection');
+const logSection = document.querySelector('.card:nth-of-type(2)');
+const logsSection = document.querySelector('.card:nth-of-type(3)');
+const severityInput = document.getElementById('severity');
+const messageInput = document.getElementById('message');
+const logList = document.getElementById('logList');
+=======
 
 // ==== On Load, Check Auth Status ====
 checkUser();
@@ -50,13 +53,12 @@ async function checkUser() {
     if (logsSection) logsSection.style.display = 'block';
 
     loadLogs();
-  } catch (err) {
-    console.warn('Auth check failed:', err);
-    if (userInfo) userInfo.textContent = '🔐 Not logged in.';
-    if (loginBtn) loginBtn.style.display = 'inline-block';
-    if (logoutBtn) logoutBtn.style.display = 'none';
-    if (logSection) logSection.style.display = 'none';
-    if (logsSection) logsSection.style.display = 'none';
+  } catch {
+    userInfo.textContent = '🔐 Not logged in.';
+    loginBtn.style.display = 'inline-block';
+    logoutBtn.style.display = 'none';
+    logSection.style.display = 'none';
+    logsSection.style.display = 'none';
   }
 }
 
@@ -68,20 +70,17 @@ if (loginBtn) {
 }
 
 // ==== Logout ====
-if (logoutBtn) {
-  logoutBtn.onclick = async () => {
-    await Auth.signOut({ global: true });
-    window.location.href = '/';
-  };
-}
+logoutBtn.onclick = async () => {
+  await Auth.signOut({ global: true });
+  window.location.href = '/';
+};
 
 // ==== Get Access Token ====
 async function getJwtToken() {
   try {
     const session = await Auth.currentSession();
     return session.getAccessToken().getJwtToken();
-  } catch (err) {
-    console.error('Error fetching token:', err);
+  } catch {
     return null;
   }
 }
@@ -93,28 +92,44 @@ async function sendLog() {
     alert('You must login first');
     return;
   }
+  const severity = severityInput.value;
+  const message = messageInput.value.trim();
 
-  const severity = document.getElementById('severity')?.value;
-  const message = document.getElementById('message')?.value;
-
-  if (!message?.trim()) {
+  if (!message) {
     alert('Please enter a log message');
     return;
   }
 
-  const response = await fetch(WRITE_LOG_URL, {
-    method: 'POST',
-    crendentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ${token}'
-    },
-    body: JSON.stringify({ severity, message })
-  });
+  // Optional: Basic severity validation
+  const allowedSeverities = ['info', 'warning', 'error'];
+  if (!allowedSeverities.includes(severity)) {
+    alert(`Severity must be one of: ${allowedSeverities.join(', ')}`);
+    return;
+  }
 
-  const result = await response.json();
-  alert(result.message || result.error || 'Log submitted');
-  loadLogs();
+  try {
+    const response = await fetch(WRITE_LOG_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ severity, message })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to submit log');
+    }
+
+    alert(result.message || 'Log submitted');
+    messageInput.value = '';
+    loadLogs();
+  } catch (err) {
+    console.error('Submit error:', err);
+    alert(err.message || 'An error occurred while submitting the log.');
+  }
 }
 
 // ==== Load Logs ====
@@ -125,24 +140,27 @@ async function loadLogs() {
     return;
   }
 
-  const res = await fetch(GET_LOGS_URL, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      'Authorization': 'Bearer ${token}'
+  try {
+    const res = await fetch(GET_LOGS_URL, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const logs = await res.json();
+
+    if (!res.ok || !Array.isArray(logs)) {
+      throw new Error('Failed to load logs');
     }
-  });
-
-  const logs = await res.json();
-
-  const list = document.getElementById('logList');
-  if (!list) return;
-
-  list.innerHTML = '';
-
-  logs.forEach(log => {
-    const item = document.createElement('li');
-    item.textContent = `[${log.datetime}] ${log.severity.toUpperCase()}: ${log.message}`;
-    list.appendChild(item);
-  });
+    logList.innerHTML = '';
+    logs.forEach(log => {
+      const item = document.createElement('li');
+      item.textContent = `[${log.datetime}] ${log.severity.toUpperCase()}: ${log.message}`;
+      logList.appendChild(item);
+    });
+  } catch (err) {
+    console.error('Load error:', err);
+    alert(err.message || 'An error occurred while loading logs.');
+  }
 }
