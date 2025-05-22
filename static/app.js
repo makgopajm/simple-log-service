@@ -1,3 +1,6 @@
+// Required when using the CDN version of Amplify v4
+const Amplify = window.aws_amplify?.Amplify || window.Amplify;
+
 // ==== CONFIGURE AMPLIFY ====
 const amplifyConfig = {
   Auth: {
@@ -5,14 +8,16 @@ const amplifyConfig = {
     userPoolId: '__USER_POOL_ID__',
     userPoolWebClientId: '__USER_POOL_CLIENT_ID__',
     oauth: {
-      domain: '__COGNITO_DOMAIN__',
+      domain: 'log-service-auth.auth.us-east-1.amazoncognito.com',
       scope: ['openid', 'email', 'profile'],
       redirectSignIn: 'https://logging-service.urbanversatile.com/',
       redirectSignOut: 'https://logging-service.urbanversatile.com/',
-      responseType: 'code'
+      responseType: 'code',
+      pkce: true
     }
   }
 };
+
 
 window.Amplify.configure(amplifyConfig);
 const Auth = window.Amplify.Auth;
@@ -30,6 +35,7 @@ const logsSection = document.querySelector('.card:nth-of-type(3)');
 const severityInput = document.getElementById('severity');
 const messageInput = document.getElementById('message');
 const logList = document.getElementById('logList');
+=======
 
 // ==== On Load, Check Auth Status ====
 checkUser();
@@ -38,13 +44,14 @@ async function checkUser() {
   try {
     const user = await Auth.currentAuthenticatedUser();
     const session = await Auth.currentSession();
-    const email = user.attributes.email || user.username;
+    const email = user?.attributes?.email || user?.username || 'Unknown user';
 
-    userInfo.textContent = `✅ Logged in as: ${email}`;
-    loginBtn.style.display = 'none';
-    logoutBtn.style.display = 'inline-block';
-    logSection.style.display = 'block';
-    logsSection.style.display = 'block';
+    if (userInfo) userInfo.textContent = `✅ Logged in as: ${email}`;
+    if (loginBtn) loginBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'inline-block';
+    if (logSection) logSection.style.display = 'block';
+    if (logsSection) logsSection.style.display = 'block';
+
     loadLogs();
   } catch {
     userInfo.textContent = '🔐 Not logged in.';
@@ -56,9 +63,11 @@ async function checkUser() {
 }
 
 // ==== Login using Hosted UI ====
-loginBtn.onclick = () => {
-  Auth.federatedSignIn();
-};
+if (loginBtn) {
+  loginBtn.onclick = () => {
+    Auth.federatedSignIn();
+  };
+}
 
 // ==== Logout ====
 logoutBtn.onclick = async () => {
@@ -83,7 +92,6 @@ async function sendLog() {
     alert('You must login first');
     return;
   }
-
   const severity = severityInput.value;
   const message = messageInput.value.trim();
 
@@ -145,7 +153,6 @@ async function loadLogs() {
     if (!res.ok || !Array.isArray(logs)) {
       throw new Error('Failed to load logs');
     }
-
     logList.innerHTML = '';
     logs.forEach(log => {
       const item = document.createElement('li');

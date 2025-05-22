@@ -5,7 +5,7 @@
   <title>Simple Log Service with Cognito Auth</title>
   <link rel="stylesheet" href="style.css" />
   <!-- AWS Amplify -->
-  <script src="https://unpkg.com/aws-amplify@5.0.4/dist/aws-amplify.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aws-amplify@4.3.17/dist/aws-amplify.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -17,7 +17,8 @@
       <button id="logoutBtn" style="display: none;">Logout</button>
     </div>
 
-    <section class="card" style="display: none;">
+    <!-- ✅ Changed to use ID -->
+    <section id="logSection" class="card" style="display: none;">
       <h2>Write a Log Entry</h2>
       <label for="severity">Severity:</label>
       <select id="severity">
@@ -32,7 +33,8 @@
       <button onclick="sendLog()">Submit Log</button>
     </section>
 
-    <section class="card" style="display: none;">
+    <!-- ✅ Changed to use ID -->
+    <section id="logsSection" class="card" style="display: none;">
       <h2>Recent Logs</h2>
       <button class="refresh-btn" onclick="loadLogs()">🔄 Refresh Logs</button>
       <ul id="logList"></ul>

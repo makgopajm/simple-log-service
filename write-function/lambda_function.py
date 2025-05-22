@@ -9,9 +9,10 @@ table = dynamodb.Table(os.environ['LOG_TABLE'])
 
 def lambda_handler(event, context):
     headers = {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "*",
-        "Access-Control-Allow-Methods": "OPTIONS,POST,GET"
+        "Access-Control-Allow-Origin": "https://logging-service.urbanversatile.com",
+        "Access-Control-Allow-Headers": "Content-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
+        "Access-Control-Allow-Credentials": "true"
     }
 
     if event["httpMethod"] == "OPTIONS":
