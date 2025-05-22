@@ -14,6 +14,7 @@ on:
       - closed
   repository_dispatch:
     types: [deploy-frontend]
+  workflow_dispatch:
 
 # Global environment variables from GitHub Secrets
 env:
@@ -49,15 +50,23 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       # Inject API URLs and set bucket name from repository_dispatch payload
-      - name: Inject API URLs into app.js
+      - name: Inject config values into app.js
         if: github.event_name == 'repository_dispatch'
         env:
           WRITE_LOG_URL: ${{ github.event.client_payload.writer_url }}
           GET_LOGS_URL: ${{ github.event.client_payload.reader_url }}
+          COGNITO_REGION: ${{ github.event.client_payload.region }}
+          USER_POOL_ID: ${{ github.event.client_payload.user_pool_id }}
+          USER_POOL_CLIENT_ID: ${{ github.event.client_payload.user_pool_client_id }}
+          COGNITO_DOMAIN: ${{ github.event.client_payload.cognito_domain }}
         run: |
-          echo "Injecting API Gateway URLs into app.js..."
+          echo "Injecting API Gateway URLs and Cognito details into app.js..."
           sed -i "s|__WRITE_LOG_URL__|${WRITE_LOG_URL}|" static/app.js
           sed -i "s|__GET_LOGS_URL__|${GET_LOGS_URL}|" static/app.js
+          sed -i "s|__COGNITO_REGION__|${COGNITO_REGION}|" static/app.js
+          sed -i "s|__USER_POOL_ID__|${USER_POOL_ID}|" static/app.js
+          sed -i "s|__USER_POOL_CLIENT_ID__|${USER_POOL_CLIENT_ID}|" static/app.js
+          sed -i "s|__COGNITO_DOMAIN__|${COGNITO_DOMAIN}|" static/app.js
 
       # Get S3 bucket name from repository_dispatch payload
       - name: Set S3 Bucket Name

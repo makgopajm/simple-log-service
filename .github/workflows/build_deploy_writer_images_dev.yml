@@ -1,9 +1,14 @@
-# Building and Deploy the image to write logs into our simple log service.
+# This Github Actions workflow is designed to build, scan, and deploy a Docker image for a Lambda function called "simpele-logs-writer".
+## It uses writer-function directory.
+## Scanning the image for security vulnerabilities using Trivy.
+## Pushing the image to Amazon ECR.
+## Then triggers the next workflow under Job "build_and_deploy_dispatch"
 
 # Name of the workflow
 name: Build & Deploy Writer Image
 
-# Runs the workflow when pull request to the branch (develop) is closed.
+## Runs the workflow when pull request to the branch main is closed.
+## Triggered by another workflow.
 on:
   pull_request:
     branches:
@@ -82,7 +87,7 @@ jobs:
           docker push $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG
           docker push $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:latest
 
-          
+  # This job is triggered by repository_dispatch event          
   build_and_deploy_dispatch:
         runs-on: ubuntu-latest
         environment: AWS
@@ -141,6 +146,7 @@ jobs:
               docker push $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:$IMAGE_TAG
               docker push $ECR_REGISTRY/${{ env.WR_ECR_REPOSITORY }}:latest
     
+            # Triggers the next workflow for the reader lambda image built.
           - name: Trigger Infra Deploy
             uses: peter-evans/repository-dispatch@v2
             with:
