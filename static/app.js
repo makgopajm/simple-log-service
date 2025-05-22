@@ -1,5 +1,5 @@
 // Required when using the CDN version of Amplify v4
-const Amplify = window.aws_amplify.Amplify;
+const Amplify = window.aws_amplify.Amplify || window.Amplify;
 
 // ==== CONFIGURE AMPLIFY ====
 const amplifyConfig = {
@@ -8,7 +8,8 @@ const amplifyConfig = {
     userPoolId: '__USER_POOL_ID__',
     userPoolWebClientId: '__USER_POOL_CLIENT_ID__',
     oauth: {
-      domain: '__COGNITO_DOMAIN__',
+      #domain: '__COGNITO_DOMAIN__',
+      domain: 'log-service-auth.auth.us-east-1.amazoncognito.com',
       scope: ['openid', 'email', 'profile'],
       redirectSignIn: 'https://logging-service.urbanversatile.com/',
       redirectSignOut: 'https://logging-service.urbanversatile.com/',
