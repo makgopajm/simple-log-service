@@ -1,69 +1,79 @@
 // ==== CONFIGURE AMPLIFY ====
 Amplify.configure({
   Auth: {
-    region: 'YOUR_AWS_REGION',            // e.g. 'us-east-1'
-    userPoolId: 'YOUR_USER_POOL_ID',      // e.g. 'us-east-1_XXXXXXX'
-    userPoolWebClientId: 'YOUR_APP_CLIENT_ID',  // e.g. 'xxxxxxxxxxxx'
-    authenticationFlowType: 'USER_PASSWORD_AUTH',
+    region: '__COGNITO_REGION__',
+    userPoolId: '__USER_POOL_ID__',
+    userPoolWebClientId: '__USER_POOL_CLIENT_ID__',
+    oauth: {
+      domain: '__COGNITO_DOMAIN__',
+      scope: ['openid', 'email', 'profile'],
+      redirectSignIn: 'https://logging-service.urbanversatile.com/',
+      redirectSignOut: 'https://logging-service.urbanversatile.com/',
+      responseType: 'code'
+    }
   }
 });
+
 
 // ==== API URLs (Inject these at deploy time) ====
 const WRITE_LOG_URL = '__WRITE_LOG_URL__';
 const GET_LOGS_URL = '__GET_LOGS_URL__';
 
-// UI elements
+// UI Elements
 const loginBtn = document.getElementById('loginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
-const authMessage = document.getElementById('authMessage');
-const authSection = document.getElementById('authSection');
-const logSection = document.getElementById('logSection');
-const logsDisplay = document.getElementById('logsDisplay');
+const userInfo = document.getElementById('userInfo');
+const logSection = document.querySelector('.card:nth-of-type(2)');
+const logsSection = document.querySelector('.card:nth-of-type(3)');
 
-loginBtn.onclick = async () => {
-  const username = document.getElementById('username').value.trim();
-  const password = document.getElementById('password').value.trim();
+// ==== On Load, Check Auth Status ====
+checkUser();
 
-  if (!username || !password) {
-    authMessage.textContent = 'Please enter username and password.';
-    return;
-  }
-  
-  authMessage.textContent = 'Logging in...';
+async function checkUser() {
   try {
-    await Amplify.Auth.signIn(username, password);
-    authMessage.textContent = 'Login successful!';
+    const user = await Amplify.Auth.currentAuthenticatedUser();
+    const session = await Amplify.Auth.currentSession();
+    const idToken = session.getIdToken().getJwtToken();
+    const accessToken = session.getAccessToken().getJwtToken();
+    const email = user.attributes.email || user.username;
+
+    userInfo.textContent = `✅ Logged in as: ${email}`;
     loginBtn.style.display = 'none';
     logoutBtn.style.display = 'inline-block';
-    authSection.style.display = 'none';
     logSection.style.display = 'block';
-    logsDisplay.style.display = 'block';
+    logsSection.style.display = 'block';
     loadLogs();
-  } catch (error) {
-    authMessage.textContent = 'Login failed: ' + error.message;
+  } catch (err) {
+    userInfo.textContent = '🔐 Not logged in.';
+    loginBtn.style.display = 'inline-block';
+    logoutBtn.style.display = 'none';
+    logSection.style.display = 'none';
+    logsSection.style.display = 'none';
   }
+}
+
+// ==== Login using Hosted UI ====
+loginBtn.onclick = () => {
+  Amplify.Auth.federatedSignIn();
 };
 
+// ==== Logout ====
 logoutBtn.onclick = async () => {
-  await Amplify.Auth.signOut();
-  authMessage.textContent = 'Logged out.';
-  loginBtn.style.display = 'inline-block';
-  logoutBtn.style.display = 'none';
-  authSection.style.display = 'block';
-  logSection.style.display = 'none';
-  logsDisplay.style.display = 'none';
+  await Amplify.Auth.signOut({ global: true });
+  window.location.href = '/'; // Reload home page after logout
 };
 
-// Helper: get current JWT token
+// ==== Get Access Token ====
 async function getJwtToken() {
   try {
     const session = await Amplify.Auth.currentSession();
-    return session.getIdToken().getJwtToken();
+    return session.getAccessToken().getJwtToken(); // API Gateway expects access token
   } catch {
     return null;
   }
 }
 
+// ==== Submit Log ====
 async function sendLog() {
   const token = await getJwtToken();
   if (!token) {
@@ -81,7 +91,7 @@ async function sendLog() {
 
   const response = await fetch(WRITE_LOG_URL, {
     method: 'POST',
-    headers: { 
+    headers: {
       'Content-Type': 'application/json',
       'Authorization': token
     },
@@ -89,10 +99,11 @@ async function sendLog() {
   });
 
   const result = await response.json();
-  alert(result.message || result.error || 'Submitted');
+  alert(result.message || result.error || 'Log submitted');
   loadLogs();
 }
 
+// ==== Load Logs ====
 async function loadLogs() {
   const token = await getJwtToken();
   if (!token) {
@@ -105,6 +116,7 @@ async function loadLogs() {
       'Authorization': token
     }
   });
+
   const logs = await res.json();
 
   const list = document.getElementById('logList');

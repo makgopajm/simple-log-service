@@ -1,76 +1,120 @@
-/* Paste your style.css content here, unchanged */
+/* Base styling */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #f4f6f8;
-    margin: 0;
-    padding: 20px;
-    color: #333;
-  }
-  
-  .container {
-    max-width: 700px;
-    margin: 0 auto;
-  }
-  
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f4f6f8;
+  margin: 0;
+  padding: 20px;
+  color: #333;
+}
+
+/* Layout */
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+/* Headings */
+h1 {
+  text-align: center;
+  color: #0073e6;
+  font-size: 2rem;
+  margin-bottom: 30px;
+}
+
+/* Card styling */
+.card {
+  background: #fff;
+  padding: 20px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Form controls */
+label {
+  display: block;
+  margin: 10px 0 5px;
+  font-weight: 600;
+}
+
+input[type="text"],
+input[type="password"],
+select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-bottom: 15px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+/* Buttons */
+button {
+  background-color: #0073e6;
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+  margin-right: 10px;
+}
+
+button:hover {
+  background-color: #005bb5;
+}
+
+.refresh-btn {
+  margin-bottom: 15px;
+  background-color: #28a745;
+}
+
+.refresh-btn:hover {
+  background-color: #218838;
+}
+
+/* Log list */
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+ul li {
+  background: #f9f9f9;
+  padding: 12px 15px;
+  border-bottom: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 8px;
+  word-wrap: break-word;
+  font-size: 15px;
+}
+
+/* Responsive tweaks */
+@media (max-width: 600px) {
   h1 {
-    text-align: center;
-    color: #0073e6;
+    font-size: 1.6rem;
   }
-  
+
   .card {
-    background: #fff;
-    padding: 20px;
-    margin-bottom: 30px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-    border-radius: 10px;
+    padding: 15px;
   }
-  
-  label {
-    display: block;
-    margin: 10px 0 5px;
-  }
-  
+
   input[type="text"],
+  input[type="password"],
   select {
-    width: 100%;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    margin-bottom: 15px;
+    font-size: 15px;
   }
-  
+
   button {
-    background-color: #0073e6;
-    color: white;
-    padding: 10px 16px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 16px;
+    width: 100%;
+    margin-top: 10px;
   }
-  
-  button:hover {
-    background-color: #005bb5;
-  }
-  
-  .refresh-btn {
-    margin-bottom: 15px;
-    background-color: #28a745;
-  }
-  
-  .refresh-btn:hover {
-    background-color: #218838;
-  }
-  
-  ul {
-    list-style-type: none;
-    padding: 0;
-  }
-  
-  ul li {
-    background: #f9f9f9;
-    padding: 12px;
-    border-bottom: 1px solid #ddd;
-    border-radius: 5px;
-    margin-bottom: 8px;
-  }
+}
