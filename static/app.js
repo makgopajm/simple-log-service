@@ -39,7 +39,7 @@ async function checkUser() {
   try {
     const user = await Auth.currentAuthenticatedUser();
     const session = await Auth.currentSession();
-    const email = user.attributes.email || user.username;
+    const email = user?.attributes?.email || user?.username || 'Unknown user';
 
     if (userInfo) userInfo.textContent = `✅ Logged in as: ${email}`;
     if (loginBtn) loginBtn.style.display = 'none';
