@@ -1,3 +1,6 @@
+// Required when using the CDN version of Amplify v4
+const Amplify = window.aws_amplify.Amplify;
+
 // ==== CONFIGURE AMPLIFY ====
 const amplifyConfig = {
   Auth: {
@@ -14,10 +17,8 @@ const amplifyConfig = {
   }
 };
 
-window.Amplify.configure(amplifyConfig);
-
-// Optional alias
-const Auth = window.Amplify.Auth;
+Amplify.configure(amplifyConfig);
+const Auth = Amplify.Auth;
 
 // ==== API URLs (Injected at deploy time) ====
 const WRITE_LOG_URL = '__WRITE_LOG_URL__';
