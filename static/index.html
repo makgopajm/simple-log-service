@@ -11,20 +11,13 @@
   <div class="container">
     <h1>📝 Simple Log Service</h1>
 
-    <section class="card" id="authSection">
-      <h2>User Authentication</h2>
-      <label for="username">Username (email):</label>
-      <input type="text" id="username" placeholder="Enter username" />
-      
-      <label for="password">Password:</label>
-      <input type="password" id="password" placeholder="Enter password" />
-      
+    <div class="card">
+      <p id="userInfo">🔐 Checking authentication...</p>
       <button id="loginBtn">Login</button>
-      <button id="logoutBtn" style="display:none;">Logout</button>
-      <p id="authMessage"></p>
-    </section>
+      <button id="logoutBtn" style="display: none;">Logout</button>
+    </div>
 
-    <section class="card" id="logSection" style="display:none;">
+    <section class="card" style="display: none;">
       <h2>Write a Log Entry</h2>
       <label for="severity">Severity:</label>
       <select id="severity">
@@ -39,13 +32,13 @@
       <button onclick="sendLog()">Submit Log</button>
     </section>
 
-    <section class="card" id="logsDisplay" style="display:none;">
+    <section class="card" style="display: none;">
       <h2>Recent Logs</h2>
       <button class="refresh-btn" onclick="loadLogs()">🔄 Refresh Logs</button>
       <ul id="logList"></ul>
     </section>
   </div>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
