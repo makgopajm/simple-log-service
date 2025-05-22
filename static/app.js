@@ -104,9 +104,10 @@ async function sendLog() {
 
   const response = await fetch(WRITE_LOG_URL, {
     method: 'POST',
+    crendentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': token
+      'Authorization': 'Bearer ${token}'
     },
     body: JSON.stringify({ severity, message })
   });
@@ -125,8 +126,10 @@ async function loadLogs() {
   }
 
   const res = await fetch(GET_LOGS_URL, {
+    method: 'GET',
+    credentials: 'include'
     headers: {
-      'Authorization': token
+      'Authorization': 'Bearer ${token}
     }
   });
 
