@@ -29,8 +29,10 @@ const GET_LOGS_URL = '__GET_LOGS_URL__';
 const loginBtn = document.getElementById('loginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const userInfo = document.getElementById('userInfo');
-const logSection = document.querySelector('.card:nth-of-type(2)');
-const logsSection = document.querySelector('.card:nth-of-type(3)');
+
+// ✅ Use IDs for clarity and stability
+const logSection = document.getElementById('logSection');
+const logsSection = document.getElementById('logsSection');
 
 // ==== On Load, Check Auth Status ====
 checkUser();
@@ -69,7 +71,7 @@ if (loginBtn) {
 if (logoutBtn) {
   logoutBtn.onclick = async () => {
     await Auth.signOut({ global: true });
-    window.location.href = '/'; // Reload home page after logout
+    window.location.href = '/';
   };
 }
 
@@ -77,7 +79,7 @@ if (logoutBtn) {
 async function getJwtToken() {
   try {
     const session = await Auth.currentSession();
-    return session.getAccessToken().getJwtToken(); // API Gateway expects access token
+    return session.getAccessToken().getJwtToken();
   } catch (err) {
     console.error('Error fetching token:', err);
     return null;
@@ -102,9 +104,10 @@ async function sendLog() {
 
   const response = await fetch(WRITE_LOG_URL, {
     method: 'POST',
+    crendentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': token
+      'Authorization': 'Bearer ${token}'
     },
     body: JSON.stringify({ severity, message })
   });
@@ -123,8 +126,10 @@ async function loadLogs() {
   }
 
   const res = await fetch(GET_LOGS_URL, {
+    method: 'GET',
+    credentials: 'include'
     headers: {
-      'Authorization': token
+      'Authorization': 'Bearer ${token}
     }
   });
 
