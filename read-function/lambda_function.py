@@ -9,9 +9,18 @@ table = dynamodb.Table(os.environ['LOG_TABLE'])
 
 def lambda_handler(event, context):
     headers = {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "*"
+        "Access-Control-Allow-Origin": "https://logging-service.urbanversatile.com",
+        "Access-Control-Allow-Headers": "Content-Type,Authorization",
+        "Access-Control-Allow-Methods": "OPTIONS,GET",
+        "Access-Control-Allow-Credentials": "true"
     }
+
+    if event["httpMethod"] == "OPTIONS":
+        return {
+            "statusCode": 200,
+            "headers": headers,
+            "body": json.dumps({"message": "CORS preflight passed"})
+        }
 
     try:
         response = table.scan()
@@ -27,7 +36,7 @@ def lambda_handler(event, context):
         }
 
     except Exception as e:
-        print(f"Error: {e}")  # Log to CloudWatch
+        print(f"Error: {e}")
         return {
             "statusCode": 500,
             "headers": headers,
