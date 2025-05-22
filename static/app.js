@@ -127,9 +127,9 @@ async function loadLogs() {
 
   const res = await fetch(GET_LOGS_URL, {
     method: 'GET',
-    credentials: 'include'
+    credentials: 'include',
     headers: {
-      'Authorization': 'Bearer ${token}
+      'Authorization': 'Bearer ${token}'
     }
   });
 
