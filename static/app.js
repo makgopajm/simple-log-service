@@ -35,7 +35,6 @@ const logsSection = document.querySelector('.card:nth-of-type(3)');
 const severityInput = document.getElementById('severity');
 const messageInput = document.getElementById('message');
 const logList = document.getElementById('logList');
-=======
 
 // ==== On Load, Check Auth Status ====
 checkUser();
