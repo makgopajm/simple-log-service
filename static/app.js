@@ -1,5 +1,5 @@
 // Required when using the CDN version of Amplify v4
-const Amplify = window.aws_amplify.Amplify;
+const Amplify = window.aws_amplify.Amplify || window.Amplify;
 
 // ==== CONFIGURE AMPLIFY ====
 const amplifyConfig = {
