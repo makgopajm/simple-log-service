@@ -12,7 +12,8 @@ const amplifyConfig = {
       scope: ['openid', 'email', 'profile'],
       redirectSignIn: 'https://logging-service.urbanversatile.com/',
       redirectSignOut: 'https://logging-service.urbanversatile.com/',
-      responseType: 'code'
+      responseType: 'code',
+      pkce: true
     }
   }
 };
