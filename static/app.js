@@ -1,5 +1,6 @@
-// Required when using the CDN version of Amplify v4
+// Access Amplify from the global window object
 const Amplify = window.aws_amplify?.Amplify || window.Amplify;
+const Auth = Amplify.Auth;
 
 // ==== CONFIGURE AMPLIFY ====
 const amplifyConfig = {
@@ -18,9 +19,7 @@ const amplifyConfig = {
   }
 };
 
-
-window.Amplify.configure(amplifyConfig);
-const Auth = window.Amplify.Auth;
+Amplify.configure(amplifyConfig);
 
 // ==== API URLs (Injected at deploy time) ====
 const WRITE_LOG_URL = '__WRITE_LOG_URL__';
@@ -30,8 +29,8 @@ const GET_LOGS_URL = '__GET_LOGS_URL__';
 const loginBtn = document.getElementById('loginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const userInfo = document.getElementById('userInfo');
-const logSection = document.querySelector('.card:nth-of-type(2)');
-const logsSection = document.querySelector('.card:nth-of-type(3)');
+const logSection = document.getElementById('logSection');
+const logsSection = document.getElementById('logsSection');
 const severityInput = document.getElementById('severity');
 const messageInput = document.getElementById('message');
 const logList = document.getElementById('logList');
@@ -42,14 +41,13 @@ checkUser();
 async function checkUser() {
   try {
     const user = await Auth.currentAuthenticatedUser();
-    const session = await Auth.currentSession();
     const email = user?.attributes?.email || user?.username || 'Unknown user';
 
-    if (userInfo) userInfo.textContent = `✅ Logged in as: ${email}`;
-    if (loginBtn) loginBtn.style.display = 'none';
-    if (logoutBtn) logoutBtn.style.display = 'inline-block';
-    if (logSection) logSection.style.display = 'block';
-    if (logsSection) logsSection.style.display = 'block';
+    userInfo.textContent = `✅ Logged in as: ${email}`;
+    loginBtn.style.display = 'none';
+    logoutBtn.style.display = 'inline-block';
+    logSection.style.display = 'block';
+    logsSection.style.display = 'block';
 
     loadLogs();
   } catch {
@@ -69,10 +67,12 @@ if (loginBtn) {
 }
 
 // ==== Logout ====
-logoutBtn.onclick = async () => {
-  await Auth.signOut({ global: true });
-  window.location.href = '/';
-};
+if (logoutBtn) {
+  logoutBtn.onclick = async () => {
+    await Auth.signOut({ global: true });
+    window.location.href = '/';
+  };
+}
 
 // ==== Get Access Token ====
 async function getJwtToken() {
@@ -91,6 +91,7 @@ async function sendLog() {
     alert('You must login first');
     return;
   }
+
   const severity = severityInput.value;
   const message = messageInput.value.trim();
 
@@ -99,7 +100,6 @@ async function sendLog() {
     return;
   }
 
-  // Optional: Basic severity validation
   const allowedSeverities = ['info', 'warning', 'error'];
   if (!allowedSeverities.includes(severity)) {
     alert(`Severity must be one of: ${allowedSeverities.join(', ')}`);
@@ -152,6 +152,7 @@ async function loadLogs() {
     if (!res.ok || !Array.isArray(logs)) {
       throw new Error('Failed to load logs');
     }
+
     logList.innerHTML = '';
     logs.forEach(log => {
       const item = document.createElement('li');
