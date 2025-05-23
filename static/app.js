@@ -78,7 +78,7 @@ if (logoutBtn) {
 async function getJwtToken() {
   try {
     const session = await Auth.currentSession();
-    return session.getAccessToken().getJwtToken();
+    return session.getIdToken().getJwtToken();
   } catch {
     return null;
   }
