@@ -30,7 +30,7 @@ jobs:
     # This job runs if either:
     # - it's a repo_dispatch event (from infra pipeline), OR
     # - a PR to develop is merged and labeled 'frontend_deploy'
-    if: github.event_name == 'repository_dispatch' || 
+    if: github.event_name == 'repository_dispatch' || github.event_name == 'workflow_dispatch' ||
         (github.event.pull_request.merged == true && contains(join(github.event.pull_request.labels.*.name, ','), 'frontend_deploy'))
 
     permissions:
