@@ -49,7 +49,6 @@ async function checkUser() {
     logSection.style.display = 'block';
     logsSection.style.display = 'block';
 
-    loadLogs();
   } catch {
     userInfo.textContent = '🔐 Not logged in.';
     loginBtn.style.display = 'inline-block';
