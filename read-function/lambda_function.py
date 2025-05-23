@@ -7,31 +7,46 @@ from decimal import Decimal
 dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table(os.environ['LOG_TABLE'])
 
-def lambda_handler(event, context):
-    headers = {
-        "Access-Control-Allow-Origin": "https://logging-service.urbanversatile.com",
-        "Access-Control-Allow-Headers": "Content-Type,Authorization",
-        "Access-Control-Allow-Methods": "OPTIONS,GET",
-        "Access-Control-Allow-Credentials": "true"
-    }
+# CORS headers
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "https://logging-service.urbanversatile.com",
+    "Access-Control-Allow-Headers": "Content-Type,Authorization",
+    "Access-Control-Allow-Methods": "OPTIONS,GET",
+    "Access-Control-Allow-Credentials": "true",
+    "Content-Type": "application/json"
+}
 
-    if event["httpMethod"] == "OPTIONS":
+def decimal_default(obj):
+    if isinstance(obj, Decimal):
+        return float(obj)
+    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
+def lambda_handler(event, context):
+    method = event.get("httpMethod", "")
+
+    # Handle preflight CORS
+    if method == "OPTIONS":
         return {
             "statusCode": 200,
-            "headers": headers,
-            "body": json.dumps({"message": "CORS preflight passed"})
+            "headers": CORS_HEADERS,
+            "body": json.dumps({"message": "CORS preflight OK"})
         }
 
     try:
+        # Optional: You can log the user identity here if needed
+        # user = event['requestContext']['authorizer']['claims']['email']
+
+        # Scan logs
         response = table.scan()
         items = response.get('Items', [])
 
+        # Sort and limit to 100 logs
         sorted_items = sorted(items, key=lambda x: x.get('datetime', ''), reverse=True)
         latest_logs = sorted_items[:100]
 
         return {
             "statusCode": 200,
-            "headers": headers,
+            "headers": CORS_HEADERS,
             "body": json.dumps(latest_logs, default=decimal_default)
         }
 
@@ -39,11 +54,6 @@ def lambda_handler(event, context):
         print(f"Error: {e}")
         return {
             "statusCode": 500,
-            "headers": headers,
+            "headers": CORS_HEADERS,
             "body": json.dumps({"error": str(e)})
         }
-
-def decimal_default(obj):
-    if isinstance(obj, Decimal):
-        return float(obj)
-    raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
