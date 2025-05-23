@@ -123,7 +123,7 @@ async function sendLog() {
 
     alert(result.message || 'Log submitted');
     messageInput.value = '';
-    loadLogs();
+    /**loadLogs();**/
   } catch (err) {
     console.error('Submit error:', err);
     alert(err.message || 'An error occurred while submitting the log.');
